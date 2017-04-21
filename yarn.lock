@@ -8,9 +8,19 @@ argparse@^1.0.7:
   dependencies:
     sprintf-js "~1.0.2"
 
+egg-path-matching@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/egg-path-matching/-/egg-path-matching-1.0.0.tgz#9c4c1b83056e2741705806e29907449b6d109c05"
+  dependencies:
+    path-to-regexp "^1.7.0"
+
 esprima@^3.1.1:
   version "3.1.3"
   resolved "https://registry.npmjs.org/esprima/-/esprima-3.1.3.tgz#fdca51cee6133895e3c88d535ce49dbff62a4633"
+
+isarray@0.0.1:
+  version "0.0.1"
+  resolved "https://registry.npmjs.org/isarray/-/isarray-0.0.1.tgz#8a18acfca9a8f4177e09abfc6038939b05d1eedf"
 
 js-yaml@^3.8.3:
   version "3.8.3"
@@ -22,6 +32,12 @@ js-yaml@^3.8.3:
 lodash.isempty@^4.4.0:
   version "4.4.0"
   resolved "https://registry.npmjs.org/lodash.isempty/-/lodash.isempty-4.4.0.tgz#6f86cbedd8be4ec987be9aaf33c9684db1b31e7e"
+
+path-to-regexp@^1.7.0:
+  version "1.7.0"
+  resolved "https://registry.npmjs.org/path-to-regexp/-/path-to-regexp-1.7.0.tgz#59fde0f435badacba103a84e9d3bc64e96b9937d"
+  dependencies:
+    isarray "0.0.1"
 
 sprintf-js@~1.0.2:
   version "1.0.3"

@@ -44,6 +44,16 @@ function swaggerPathToExpressPath (path) {
   return path.replace(/\{/g, ':').replace(/\}/g, '')
 }
 
+function matchedPath (path, pathsList) {
+  for (const _path of pathsList) {
+    const match = pathMatching({ match: _path })
+
+    if (match({ path })) {
+      return _path
+    }
+  }
+}
+
 function operationObjectToParameterRules (operationObject) {
   const rules = {
     query: {},
@@ -90,12 +100,15 @@ module.exports = (options, app) => {
   const swaggerContent = fs.readFileSync(options.swaggerFile, 'utf8')
   const api = yaml.safeLoad(swaggerContent)
 
-  const rulesTable = {}
-
   const { paths } = api
+
+  // generate rulesTable and pathsList
+  const rulesTable = {}
+  let pathsList = []
 
   for (let [ path, pathItemObject ] of Object.entries(paths)) {
     path = swaggerPathToExpressPath(path)
+    pathsList.push(path)
 
     for (const [ field, object ] of Object.entries(pathItemObject)) {
       if (httpMethods.includes(field)) {
@@ -110,12 +123,17 @@ module.exports = (options, app) => {
     }
   }
 
+  // reverse sort pathsList for right order of paths
+  pathsList = pathsList.sort().reverse()
+
   return async function middleware (ctx, next) {
-    const path = ctx.request.path.toLowerCase()
+    const _path = ctx.request.path.toLowerCase()
     const method = ctx.request.method.toLowerCase()
 
+    const path = matchedPath(_path, pathsList)
+
     // no rule for path
-    if (!rulesTable[path]) {
+    if (!path) {
       await next()
       return
     }
