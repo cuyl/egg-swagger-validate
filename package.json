@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Validate parameters via swagger for egg.",
   "eggPlugin": {
-    "name": "swagger-swagger-validate",
+    "name": "swagger-validate",
     "dependencies": [ "validate" ]
   },
   "files": [
