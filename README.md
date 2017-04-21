@@ -8,6 +8,18 @@
 <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat" alt="License - MIT">
 </p>
 
+<!-- start: markdown-toc -->
+
+
+- [-](#-)
+- [Usage](#usage)
+- [Extentions to the Swagger Schema](#extentions-to-the-swagger-schema)
+    - [Why?](#why)
+    - [Extensions](#extensions)
+    - [Example of extended Swagger Schema](#example-of-extended-swagger-schema)
+
+<!-- end: markdown-toc -->
+
 ## Installation
 
 ```sh
@@ -52,15 +64,46 @@ module.exports = {
 }
 ```
 
-## Extentions to the Swagger Schema.
-
+## Extentions to the Swagger Schema
+### Why?
 It is NOT one-to-one mapping of Swagger Schema parametrs' type to egg-validate's type. Therefore, I have to find a way to do this.
 
 Swagger specification said:
 
 > Allows extensions to the Swagger Schema. The field name MUST begin with `x-`, for example, `x-internal-id`.
 
+So, I extend it.
+
+### Extensions
 Extensions of [Parameter Object](http://swagger.io/specification/#parameterObject):
 
 + `x-format` corresponding to `type` in [parameter](https://github.com/node-modules/parameter)
 + `x-format-options` corresponding to other fields except `type` in [parameter](https://github.com/node-modules/parameter)
+
+More information of available value of `x-format` and `x-format-options` can be found in [parameter's document](https://github.com/node-modules/parameter).
+
+### Example of extended Swagger Schema
+
+```yaml
+paths:
+  /mails:
+    get:
+      summary: get mails
+      description: Get Mails
+      parameters:
+        - name: email
+          in: query
+          description: email address
+          required: true
+          type: string
+          x-format: email
+        - name: quantity
+          in: query
+          description: quantity of emails
+          required: true
+          type: number
+          x-format: number
+          x-format-options:
+            max: 20
+            min: 1
+```
