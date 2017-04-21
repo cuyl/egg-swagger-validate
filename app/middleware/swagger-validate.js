@@ -96,6 +96,10 @@ function operationObjectToParameterRules (operationObject) {
   return rules
 }
 
+function operationObjectToController (operationObject) {
+  return operationObject['x-controller']
+}
+
 module.exports = (options, app) => {
   const swaggerContent = fs.readFileSync(options.swaggerFile, 'utf8')
   const api = yaml.safeLoad(swaggerContent)
@@ -104,6 +108,7 @@ module.exports = (options, app) => {
 
   // generate rulesTable and pathsList
   const rulesTable = {}
+  const controllersTable = {}
   let pathsList = []
 
   for (let [ path, pathItemObject ] of Object.entries(paths)) {
@@ -119,12 +124,27 @@ module.exports = (options, app) => {
           rulesTable[path] = {}
         }
         rulesTable[path][httpMethod] = operationObjectToParameterRules(operationObject)
+
+        if (!controllersTable[path]) {
+          controllersTable[path] = {}
+        }
+        controllersTable[path][httpMethod] = operationObjectToController(operationObject)
       }
     }
   }
 
   // reverse sort pathsList for right order of paths
   pathsList = pathsList.sort().reverse()
+
+  // bind paths to controllers
+  for (const [ path, pathObject ] of Object.entries(controllersTable)) {
+    for (const [ method, controller ] of Object.entries(pathObject)) {
+      if (controller) {
+        // bind before start
+        app.beforeStart(() => app[method](path, controller))
+      }
+    }
+  }
 
   return async function middleware (ctx, next) {
     const _path = ctx.request.path.toLowerCase()
