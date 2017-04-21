@@ -8,18 +8,6 @@
 <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat" alt="License - MIT">
 </p>
 
-<!-- start: markdown-toc -->
-
-## TOC
-
-- [Usage](#usage)
-- [Extentions to the Swagger Schema](#extentions-to-the-swagger-schema)
-    - [Why?](#why)
-    - [Extensions](#extensions)
-    - [Example of extended Swagger Schema](#example-of-extended-swagger-schema)
-
-<!-- end: markdown-toc -->
-
 ## Installation
 
 ```sh
