@@ -3,6 +3,7 @@
 const fs = require('fs')
 const yaml = require('js-yaml')
 const isEmpty = require('lodash.isempty')
+const pathMatching = require('egg-path-matching')
 
 const httpMethods = [
   'get',
@@ -35,6 +36,12 @@ function stringToPrimative (string) {
   }
 
   return string
+}
+
+function swaggerPathToExpressPath (path) {
+  // /user/{id}/{age} => /user/:id/:age
+
+  return path.replace(/\{/g, ':').replace(/\}/g, '')
 }
 
 function operationObjectToParameterRules (operationObject) {
@@ -87,7 +94,9 @@ module.exports = (options, app) => {
 
   const { paths } = api
 
-  for (const [ path, pathItemObject ] of Object.entries(paths)) {
+  for (let [ path, pathItemObject ] of Object.entries(paths)) {
+    path = swaggerPathToExpressPath(path)
+
     for (const [ field, object ] of Object.entries(pathItemObject)) {
       if (httpMethods.includes(field)) {
         const httpMethod = field
