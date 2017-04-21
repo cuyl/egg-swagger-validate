@@ -8,6 +8,8 @@
 <img src="https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat" alt="License - MIT">
 </p>
 
+**WARNING: DO NOT USE IT IN YOUR PRODUCTION ENVIRONMENT BEFORE 1.0.0.**
+
 ## Installation
 
 ```sh
