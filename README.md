@@ -69,12 +69,24 @@ Extensions of [Parameter Object](http://swagger.io/specification/#parameterObjec
 
 + `x-format` corresponding to `type` in [parameter](https://github.com/node-modules/parameter)
 + `x-format-options` corresponding to other fields except `type` in [parameter](https://github.com/node-modules/parameter)
++ `x-controller` bind a controller to current path automatically
+
+> **Do not use `app/router.js` in egg.js, if you start to use `x-controller`.**
 
 More information of available value of `x-format` and `x-format-options` can be found in [parameter's document](https://github.com/node-modules/parameter).
 
-### Example of extended Swagger Schema
+## Functions of egg-swagger-validate
+
+1. generates validate rules from `x-format` and `x-format-options`
+2. validate parameters according to rules generated from step 1
+3. if not pass, throw error
+4. if pass, handle request by using controller specified by `x-controller`
+
+## Example of extended Swagger Schema
 
 ```yaml
+...
+
 paths:
   /mails:
     get:
@@ -96,4 +108,11 @@ paths:
           x-format-options:
             max: 20
             min: 1
+      x-controller: mails.get
+
+...
 ```
+
+## Last
+
+Sit here, code this.
