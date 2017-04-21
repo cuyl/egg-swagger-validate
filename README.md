@@ -10,8 +10,8 @@
 
 <!-- start: markdown-toc -->
 
+## TOC
 
-- [-](#-)
 - [Usage](#usage)
 - [Extentions to the Swagger Schema](#extentions-to-the-swagger-schema)
     - [Why?](#why)
