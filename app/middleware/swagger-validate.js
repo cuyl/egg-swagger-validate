@@ -14,6 +14,29 @@ const httpMethods = [
   'patch'
 ]
 
+function stringToPrimative (string) {
+  if (typeof string === 'string') {
+    // Number
+    const numberRe = /^[+-]?\d*\.?\d+(?:[Ee][+-]?\d+)?$/
+    if (numberRe.test(string)) {
+      return Number(string)
+    }
+
+    // Boolean
+    if (string === 'true') {
+      return true
+    }
+    if (string === 'false') {
+      return false
+    }
+
+    // Undefined / Null is ignored due to security reason.
+    // Symbol is not necessary.
+  }
+
+  return string
+}
+
 function operationObjectToParameterRules (operationObject) {
   const rules = {
     query: {},
@@ -60,7 +83,7 @@ module.exports = (options, app) => {
   const swaggerContent = fs.readFileSync(options.swaggerFile, 'utf8')
   const api = yaml.safeLoad(swaggerContent)
 
-  const rules = {}
+  const rulesTable = {}
 
   const { paths } = api
 
@@ -70,10 +93,10 @@ module.exports = (options, app) => {
         const httpMethod = field
         const operationObject = object
 
-        if (!rules[path]) {
-          rules[path] = {}
+        if (!rulesTable[path]) {
+          rulesTable[path] = {}
         }
-        rules[path][httpMethod] = operationObjectToParameterRules(operationObject)
+        rulesTable[path][httpMethod] = operationObjectToParameterRules(operationObject)
       }
     }
   }
@@ -83,13 +106,13 @@ module.exports = (options, app) => {
     const method = ctx.request.method.toLowerCase()
 
     // no rule for path
-    if (!rules[path]) {
+    if (!rulesTable[path]) {
       await next()
       return
     }
 
     // no rule for method
-    if (!rules[path][method]) {
+    if (!rulesTable[path][method]) {
       await next()
       return
     }
@@ -103,9 +126,16 @@ module.exports = (options, app) => {
       body: ctx.request.body
     }
 
-    for (const [key, rule] of Object.entries(rules[path][method])) {
+    for (const [key, rule] of Object.entries(rulesTable[path][method])) {
       if (!isEmpty(rule)) {
         const data = dataMap[key]
+
+        if (key === 'query') {
+          for (const [key, value] of Object.entries(data)) {
+            data[key] = stringToPrimative(value)
+          }
+        }
+
         ctx.validate(rule, data)
       }
     }
