@@ -1,6 +1,6 @@
 {
   "name": "egg-swagger-validate",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Validate parameters via swagger for egg.",
   "eggPlugin": {
     "name": "swagger-validate",
