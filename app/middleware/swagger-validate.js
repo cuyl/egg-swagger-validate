@@ -183,7 +183,6 @@ module.exports = (options, app) => {
       }
     }
 
-    console.log(JSON.stringify(_meta, '', 2))
   })
 
   return async function middleware (ctx, next) {
