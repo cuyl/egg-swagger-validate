@@ -2,6 +2,8 @@
 
 const SwaggerParser = require('swagger-parser')
 const isEmpty = require('lodash.isempty')
+const set = require('lodash.set')
+const get = require('lodash.get')
 const pathMatching = require('egg-path-matching')
 
 const httpMethods = [
@@ -97,13 +99,9 @@ function operationObjectToParameterRules (operationObject) {
 
         const {
           type,
-          required,
           'x-format': xFormat,
           'x-format-options': xFormatOptions
         } = detail
-
-        // requried
-        rule.required = required
 
         // x-format
         rule.type = xFormat || type
@@ -124,7 +122,7 @@ function operationObjectToParameterRules (operationObject) {
       // required
       let { required } = parameter
       if (location === 'path') required = true
-      rule.required = required
+      rule.required = required || false
 
       // x-format
       rule.type = xFormat || type
@@ -146,70 +144,61 @@ function operationObjectToController (operationObject) {
 module.exports = (options, app) => {
   const { swaggerFile } = options
 
-  const rulesTable = {}
-  const controllersTable = {}
-  let pathsList = []
+  const _meta = {
+    paths: [],
+    verbose: {}
+  }
 
   SwaggerParser.validate(swaggerFile).then(api => {
     const { paths } = api
 
-    // generate rulesTable and pathsList
-
     for (let [ path, pathItemObject ] of Object.entries(paths)) {
       path = swaggerPathToExpressPath(path)
-      pathsList.push(path)
+      _meta.paths.push(path)
 
       for (const [ field, object ] of Object.entries(pathItemObject)) {
         if (httpMethods.includes(field)) {
           const httpMethod = field
           const operationObject = object
 
-          if (!rulesTable[path]) {
-            rulesTable[path] = {}
-          }
-          rulesTable[path][httpMethod] = operationObjectToParameterRules(operationObject)
+          const rule = operationObjectToParameterRules(operationObject)
+          set(_meta, [ 'verbose', path, httpMethod, 'rules' ], rule)
 
-          if (!controllersTable[path]) {
-            controllersTable[path] = {}
-          }
-          controllersTable[path][httpMethod] = operationObjectToController(operationObject)
+          const controller = operationObjectToController(operationObject)
+          set(_meta, [ 'verbose', path, httpMethod, 'controller' ], controller)
         }
       }
     }
 
     // reverse sort pathsList for right order of paths
-    pathsList = pathsList.sort().reverse()
+    _meta.paths = _meta.paths.sort().reverse()
 
     // bind paths to controllers
-    for (const [ path, pathObject ] of Object.entries(controllersTable)) {
-      for (const [ method, controller ] of Object.entries(pathObject)) {
+    for (const [ path, pathObject ] of Object.entries(_meta.verbose)) {
+      for (const [ method, { controller } ] of Object.entries(pathObject)) {
         if (controller) {
           // bind before start
           app.beforeStart(() => app[method](path, controller))
         }
       }
     }
+
+    console.log(JSON.stringify(_meta, '', 2))
   })
 
   return async function middleware (ctx, next) {
     const _path = ctx.request.path.toLowerCase()
-    const method = ctx.request.method.toLowerCase()
+    const _method = ctx.request.method.toLowerCase()
 
-    const path = matchedPath(_path, pathsList)
+    const path = matchedPath(_path, _meta.paths)
+    const method = _method
 
-    // no rule for path
-    if (!path) {
+    const rules = get(_meta, [ 'verbose', path, method, 'rules' ])
+    if (!rules) {
       await next()
       return
     }
 
-    // no rule for method
-    if (!rulesTable[path][method]) {
-      await next()
-      return
-    }
-
-    // handle existing rule
     const dataMap = {
       query: ctx.query,
       header: ctx.header,
@@ -218,11 +207,11 @@ module.exports = (options, app) => {
       body: ctx.request.body
     }
 
-    for (const [key, rule] of Object.entries(rulesTable[path][method])) {
+    for (const [location, rule] of Object.entries(rules)) {
       if (!isEmpty(rule)) {
-        const data = dataMap[key]
+        const data = dataMap[location]
 
-        if (key === 'query') {
+        if (location === 'query') {
           for (const [key, value] of Object.entries(data)) {
             data[key] = stringToPrimative(value)
           }
@@ -231,7 +220,7 @@ module.exports = (options, app) => {
         try {
           ctx.validate(rule, data)
         } catch (e) {
-          enrichValidateError(e, { in: key })
+          enrichValidateError(e, { in: location })
           throw e
         }
       }

@@ -27,7 +27,9 @@
   "homepage": "https://github.com/m31271n/egg-swagger-validate#readme",
   "dependencies": {
     "egg-path-matching": "^1.0.0",
+    "lodash.get": "^4.4.2",
     "lodash.isempty": "^4.4.0",
+    "lodash.set": "^4.3.2",
     "swagger-parser": "^3.4.1"
   },
   "engines": {
