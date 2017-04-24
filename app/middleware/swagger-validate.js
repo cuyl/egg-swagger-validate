@@ -1,7 +1,6 @@
 'use strict'
 
-const fs = require('fs')
-const yaml = require('js-yaml')
+const SwaggerParser = require('swagger-parser')
 const isEmpty = require('lodash.isempty')
 const pathMatching = require('egg-path-matching')
 
@@ -85,27 +84,56 @@ function operationObjectToParameterRules (operationObject) {
   }
 
   for (const parameter of parameterObject) {
-    const rule = {}
+    const {
+      name,
+      'in': location
+    } = parameter
 
-    const { name,
-            in: location,
-            type,
-            'x-format': xFormat,
-            'x-format-options': xFormatOptions
-          } = parameter
+    if (location === 'body') {
+      const { schema } = parameter
 
-    // required
-    let { required } = parameter
-    if (location === 'path') required = true
-    rule.required = required
+      for (const [ name, detail ] of Object.entries(schema.properties)) {
+        const rule = {}
 
-    // x-format
-    rule.type = xFormat || type
+        const {
+          type,
+          required,
+          'x-format': xFormat,
+          'x-format-options': xFormatOptions
+        } = detail
 
-    // x-format-options
-    Object.assign(rule, xFormatOptions)
+        // requried
+        rule.required = required
 
-    rules[location][name] = rule
+        // x-format
+        rule.type = xFormat || type
+
+        // x-format-options
+        Object.assign(rule, xFormatOptions)
+
+        rules[location][name] = rule
+      }
+    } else {
+      const rule = {}
+      const {
+        type,
+        'x-format': xFormat,
+        'x-format-options': xFormatOptions
+      } = parameter
+
+      // required
+      let { required } = parameter
+      if (location === 'path') required = true
+      rule.required = required
+
+      // x-format
+      rule.type = xFormat || type
+
+      // x-format-options
+      Object.assign(rule, xFormatOptions)
+
+      rules[location][name] = rule
+    }
   }
 
   return rules
@@ -116,50 +144,52 @@ function operationObjectToController (operationObject) {
 }
 
 module.exports = (options, app) => {
-  const swaggerContent = fs.readFileSync(options.swaggerFile, 'utf8')
-  const api = yaml.safeLoad(swaggerContent)
+  const { swaggerFile } = options
 
-  const { paths } = api
-
-  // generate rulesTable and pathsList
   const rulesTable = {}
   const controllersTable = {}
   let pathsList = []
 
-  for (let [ path, pathItemObject ] of Object.entries(paths)) {
-    path = swaggerPathToExpressPath(path)
-    pathsList.push(path)
+  SwaggerParser.validate(swaggerFile).then(api => {
+    const { paths } = api
 
-    for (const [ field, object ] of Object.entries(pathItemObject)) {
-      if (httpMethods.includes(field)) {
-        const httpMethod = field
-        const operationObject = object
+    // generate rulesTable and pathsList
 
-        if (!rulesTable[path]) {
-          rulesTable[path] = {}
+    for (let [ path, pathItemObject ] of Object.entries(paths)) {
+      path = swaggerPathToExpressPath(path)
+      pathsList.push(path)
+
+      for (const [ field, object ] of Object.entries(pathItemObject)) {
+        if (httpMethods.includes(field)) {
+          const httpMethod = field
+          const operationObject = object
+
+          if (!rulesTable[path]) {
+            rulesTable[path] = {}
+          }
+          rulesTable[path][httpMethod] = operationObjectToParameterRules(operationObject)
+
+          if (!controllersTable[path]) {
+            controllersTable[path] = {}
+          }
+          controllersTable[path][httpMethod] = operationObjectToController(operationObject)
         }
-        rulesTable[path][httpMethod] = operationObjectToParameterRules(operationObject)
-
-        if (!controllersTable[path]) {
-          controllersTable[path] = {}
-        }
-        controllersTable[path][httpMethod] = operationObjectToController(operationObject)
       }
     }
-  }
 
-  // reverse sort pathsList for right order of paths
-  pathsList = pathsList.sort().reverse()
+    // reverse sort pathsList for right order of paths
+    pathsList = pathsList.sort().reverse()
 
-  // bind paths to controllers
-  for (const [ path, pathObject ] of Object.entries(controllersTable)) {
-    for (const [ method, controller ] of Object.entries(pathObject)) {
-      if (controller) {
-        // bind before start
-        app.beforeStart(() => app[method](path, controller))
+    // bind paths to controllers
+    for (const [ path, pathObject ] of Object.entries(controllersTable)) {
+      for (const [ method, controller ] of Object.entries(pathObject)) {
+        if (controller) {
+          // bind before start
+          app.beforeStart(() => app[method](path, controller))
+        }
       }
     }
-  }
+  })
 
   return async function middleware (ctx, next) {
     const _path = ctx.request.path.toLowerCase()
