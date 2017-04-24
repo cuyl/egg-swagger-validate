@@ -81,9 +81,11 @@ More information of available value of `x-format` and `x-format-options` can be 
 
 ### Extensions
 
-Add `in` field for `errors`.
+Extensions of `egg-validate`:
 
-For example, in `egg-validate`, the response is:
++ Add `in` field for `errors`.
+
+For example, when using `egg-validate`, the response is:
 
 ```json
 {
@@ -99,7 +101,7 @@ For example, in `egg-validate`, the response is:
 }
 ```
 
-But, in `egg-swagger-validate`, the response is:
+But, when using `egg-swagger-validate`, the response is:
 
 ```json
 {
