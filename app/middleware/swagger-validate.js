@@ -38,6 +38,21 @@ function stringToPrimative (string) {
   return string
 }
 
+/**
+ * Add more metadata for e throwed by egg-validate
+ *
+ *  assign meta to every element in e.errors
+ */
+
+function enrichValidateError (e, meta) {
+  // ensure e is throw by egg-validate
+  if (e.code === 'invalid_param') {
+    for (const error of e.errors) {
+      Object.assign(error, meta)
+    }
+  }
+}
+
 function swaggerPathToExpressPath (path) {
   // /user/{id}/{age} => /user/:id/:age
 
@@ -183,7 +198,12 @@ module.exports = (options, app) => {
           }
         }
 
-        ctx.validate(rule, data)
+        try {
+          ctx.validate(rule, data)
+        } catch (e) {
+          enrichValidateError(e, { in: key })
+          throw e
+        }
       }
     }
 

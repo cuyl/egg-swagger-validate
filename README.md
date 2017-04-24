@@ -56,7 +56,7 @@ module.exports = {
 
 ## Extentions to the Swagger Schema
 ### Why?
-It is NOT one-to-one mapping of Swagger Schema parametrs' type to egg-validate's type. Therefore, I have to find a way to do this.
+It is NOT one-to-one mapping of Swagger Schema parameters' type to egg-validate's type. Therefore, we have to find a way to do this.
 
 Swagger specification said:
 
@@ -74,6 +74,49 @@ Extensions of [Parameter Object](http://swagger.io/specification/#parameterObjec
 > **Do not use `app/router.js` in egg.js, if you start to use `x-controller`.**
 
 More information of available value of `x-format` and `x-format-options` can be found in [parameter's document](https://github.com/node-modules/parameter).
+
+## Extentions to egg-validate
+### Why?
+`egg-swagger-validate` will check multiple types of parameters at one time, different from what `egg-validate` does. Therefore, we have to find a way to distinguish different types of validate error.
+
+### Extensions
+
+Add `in` field for `errors`.
+
+For example, in `egg-validate`, the response is:
+
+```json
+{
+    "code": "invalid_param",
+    "errors": [
+        {
+            "code": "missing_field",
+            "field": "quantity",
+            "message": "required"
+        }
+    ],
+    "message": "Validation Failed"
+}
+```
+
+But, in `egg-swagger-validate`, the response is:
+
+```json
+{
+    "code": "invalid_param",
+    "errors": [
+        {
+            "code": "missing_field",
+            "field": "quantity",
+            "in": "query",
+            "message": "required"
+        }
+    ],
+    "message": "Validation Failed"
+}
+```
+
+You can see, `in` field let you know where the missing field in.
 
 ## Functions of egg-swagger-validate
 
