@@ -182,7 +182,6 @@ module.exports = (options, app) => {
         }
       }
     }
-
   })
 
   return async function middleware (ctx, next) {
